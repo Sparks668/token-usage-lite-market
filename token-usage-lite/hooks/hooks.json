@@ -1,0 +1,32 @@
+{
+  "description": "token-usage-lite: 会话启动时确保加固配置并自动安装/修复悬浮用量状态条(vendored 自 zcode-token-usage-statusbar v1.5.7, MIT;会修改 app.asar,完全退出重开生效;/uninstall-overlay 可阻止重注入);提问时记录时刻驱动上一轮速率行。解释器按 python3→python→py -3 自动回退。",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": true,
+            "command": "python3 \"${ZCODE_PLUGIN_ROOT}/hooks/session_start.py\" || python \"${ZCODE_PLUGIN_ROOT}/hooks/session_start.py\" || py -3 \"${ZCODE_PLUGIN_ROOT}/hooks/session_start.py\"",
+            "timeoutMs": 60000,
+            "statusMessage": "token-usage-lite: 检查悬浮状态条…"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": true,
+            "command": "python3 \"${ZCODE_PLUGIN_ROOT}/hooks/prompt_submit.py\" || python \"${ZCODE_PLUGIN_ROOT}/hooks/prompt_submit.py\" || py -3 \"${ZCODE_PLUGIN_ROOT}/hooks/prompt_submit.py\"",
+            "timeoutMs": 8000,
+            "statusMessage": "token-usage-lite: 记录提问时刻…"
+          }
+        ]
+      }
+    ]
+  }
+}

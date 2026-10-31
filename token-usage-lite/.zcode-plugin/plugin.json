@@ -1,0 +1,48 @@
+{
+  "name": "token-usage-lite",
+  "version": "0.3.4",
+  "description": "ZCode token 用量全家桶:MCP 查询工具(usage_snapshot/open_hud)+ 侧栏实时 HUD 面板 + 底部悬浮状态条(输入框上方,悬浮条默认只显速率(缓存命中等所有格默认关,⚙ 面板可开);悬浮条 vendored 自 ByteRax/zcode-token-usage-statusbar v1.5.7, MIT, 见 NOTICE.md)。数据只读本地;套餐额度查询与插件自动更新缺省关闭,分发版零联网配置。安装悬浮条会修改 app.asar,需完全退出重开生效;/uninstall-overlay 可卸载。",
+  "author": {
+    "name": "bobchen"
+  },
+  "license": "MIT",
+  "keywords": [
+    "token",
+    "usage",
+    "rate",
+    "ttft",
+    "context",
+    "hud"
+  ],
+  "skills": "skills",
+  "mcpServers": {
+    "token-usage-lite": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "${ZCODE_PLUGIN_ROOT}/scripts/usage_mcp.py"
+      ]
+    }
+  },
+  "ui": {
+    "surfaces": [
+      {
+        "id": "hud",
+        "title": {
+          "zh-CN": "Token 用量",
+          "en-US": "Token Usage"
+        },
+        "icon": "activity",
+        "server": "token-usage-lite",
+        "resourceUri": "ui://token-usage-lite/panel.html",
+        "availability": "session"
+      }
+    ]
+  },
+  "description_i18n": {
+    "en": "ZCode token usage all-in-one: MCP query tools (usage_snapshot/open_hud) + live HUD side panel + bottom floating status bar (per-token rate/TTFT/context bar/subagent stats; bar vendored from ByteRax/zcode-token-usage-statusbar v1.5.7, MIT, see NOTICE.md). Read-only local data; quota polling and plugin auto-update default OFF. Installing the bar patches app.asar (full restart required); /uninstall-overlay to remove.",
+    "zh-CN": "ZCode token 用量全家桶:MCP 查询工具(usage_snapshot/open_hud)+ 侧栏实时 HUD 面板 + 底部悬浮状态条(输入框上方,逐 token 速率/TTFT/上下文进度条/子代理统计;悬浮条 vendored 自 ByteRax/zcode-token-usage-statusbar v1.5.7, MIT, 见 NOTICE.md)。数据只读本地;套餐额度查询与插件自动更新缺省关闭,分发版零联网配置。安装悬浮条会修改 app.asar,需完全退出重开生效;/uninstall-overlay 可卸载。"
+  },
+  "commands": "commands",
+  "hooks": "hooks/hooks.json"
+}
