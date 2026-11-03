@@ -3951,7 +3951,8 @@
           curCls: speedView && speedView.band ? speedView.cls : "",
           basisTitle: L("统计口径", "Basis"),
           basisText: basisText,
-          foot: [L("数据来自 renderer 会话状态（只读桥），实时更新，不经过本地数据库轮询；生成中的数值为字符增量估算", "Data comes from the renderer session state via the read-only bridge, updating live, independent of local database polling; running values are estimated from text deltas")]
+          legend: false,   // vendored 分发定制:速度卡精简(去十档图例与注脚,仅留数字+口径)
+          foot: []
         }).replace('<div class="zu-stat-tip zu-stat-tip--speed">', '<div class="zu-stat-tip zu-stat-tip--speed">') + extra + '</div>';
       function escHtml(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
     }
@@ -4039,7 +4040,8 @@
               ? [L("Σ输出（含思考）÷ Σ生成耗时", "Σoutput (thinking incl.) ÷ Σgeneration time"),
                  L("统计会话全部已完成请求：工具等待不计，不含子代理。", "All completed requests of this session: tool waits excluded, sub-agents excluded.")]
               : [L("输出 tokens（含思考）÷ 生成耗时", "output tokens (thinking incl.) ÷ generation time")],
-            foot: [L("每段完成后刷新：回复末尾为整问加权均值，数值不同属正常。", "Refreshes as each segment completes: the reply-end line is the whole-turn weighted average and legitimately differs.")],
+            legend: false,   // vendored 分发定制:速度卡精简
+            foot: [],
             timeStart: (!sessAvg && last.startedAt) ? fmtStartS(last.startedAt) : "",
             timeEnd: (!sessAvg && last.endedAt) ? fmtStartS(last.endedAt) : ""
           }) +
@@ -7804,7 +7806,8 @@
           : (v.sessAvg
             ? [L("Σ输出（含思考）÷ Σ生成耗时", "Σoutput (thinking incl.) ÷ Σgeneration time"),
                L("统计会话全部已完成请求：工具等待不计，不含子代理。", "All completed requests of this session: tool waits excluded, sub-agents excluded.")]
-            : [L("输出 tokens（含思考）÷ 生成耗时", "output tokens (thinking incl.) ÷ generation time")])
+            : [L("输出 tokens（含思考）÷ 生成耗时", "output tokens (thinking incl.) ÷ generation time")]),
+        legend: false   // vendored 分发定制:速度卡精简
       });
       /* 状态条摘要（用户拍板：隐藏格数据收进速率 tooltip）：逐格开关继续生效——
        * 关掉的格不出摘要行；子代理行可点击开明细面板（条面 .zu-sub 格的替身入口）。 */
