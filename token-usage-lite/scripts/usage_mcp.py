@@ -15,7 +15,7 @@ import usage_stats  # noqa: E402
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "token-usage-lite"
-SERVER_VERSION = "0.3.4"
+SERVER_VERSION = "0.3.5"
 PANEL_URI = "ui://token-usage-lite/panel.html"
 PANEL_PATH = Path(__file__).parent.parent / "ui" / "panel.html"
 

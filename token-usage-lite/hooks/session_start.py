@@ -16,12 +16,13 @@ HARDENED = {
     "quota_enabled": False,
     "reset_badge_enabled": False,
     "plugin_auto_update": False,
+    "auto_compact_patch": False,
     "answer_rate_line": True,
     "restart_notice": True,
     "context_window": 200000,
     "remote": {"auto": False, "enabled": False},
 }
-FILL_KEYS = ("plugin_auto_update", "quota_enabled", "reset_badge_enabled")
+FILL_KEYS = ("plugin_auto_update", "quota_enabled", "reset_badge_enabled", "auto_compact_patch")
 
 
 def ensure_config():

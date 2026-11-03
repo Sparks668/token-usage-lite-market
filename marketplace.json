@@ -4,9 +4,11 @@
     {
       "name": "token-usage-lite",
       "source": "./token-usage-lite",
-      "version": "0.3.4",
+      "version": "0.3.5",
       "displayName": "Token Usage Lite",
-      "displayName_i18n": { "zh-CN": "Token 用量速览" },
+      "displayName_i18n": {
+        "zh-CN": "Token 用量速览"
+      },
       "description": "ZCode token 用量全家桶:MCP 查询 + 侧栏实时 HUD 面板 + 底部悬浮速率条(默认仅速率)。数据只读本地,零联网配置。",
       "description_i18n": {
         "zh-CN": "ZCode token 用量全家桶:MCP 查询 + 侧栏实时 HUD 面板 + 底部悬浮速率条(默认仅速率,⚙ 可开缓存命中/上下文等)。数据只读本地 SQLite 与日志,零联网配置;悬浮条 vendored 自 ByteRax/zcode-token-usage-statusbar (MIT)。"

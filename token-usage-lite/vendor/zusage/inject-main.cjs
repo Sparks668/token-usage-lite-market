@@ -30,7 +30,7 @@ const ZUSAGE = path.join(HERE, "zusage.py");
 const TOKEN_RATE = path.join(HERE, "token_rate.py");
 const LOG = (...a) => console.error("[zusage]", ...a);
 const loadedHashes = { _loadedAt: Date.now() - process.uptime() * 1000 };
-for (const name of ["inject-main.cjs", "plugin-updater.cjs", "plugin-release.cjs", "plugin-storage.cjs", "quota-client.cjs", "model-puller.cjs", "overlay.js", "zusage.py"]) {
+for (const name of ["inject-main.cjs", "plugin-updater.cjs", "plugin-release.cjs", "plugin-storage.cjs", "quota-client.cjs", "model-puller.cjs", "engine-patch.cjs", "overlay.js", "zusage.py"]) {
   try { loadedHashes[name] = createHash("sha256").update(fs.readFileSync(path.join(HERE, name))).digest("hex"); }
   catch (e) { LOG("startup fingerprint unavailable:", name, e.message); }
 }
@@ -372,6 +372,7 @@ function handlePayload(payload) {
                 activeMap: Array.from(activeSid.entries()).slice(0, 12),
                 wants: lastWants,
               };
+              obj.enginePatch = enginePatcher ? enginePatcher.status() : null;
               fs.writeFileSync(file, JSON.stringify(obj));
             } catch (e2) {
               try { fs.writeFileSync(file, s); } catch (e) { }
@@ -722,6 +723,7 @@ function watchDb() {
  * 收敛常驻 stat 开销（热更新最晚多等 3s 生效）；false 仍每次 tick 现读、即时禁用。 */
 let overlayMtimeKnown = false;
 let zusageMtime = 0;
+let pricingMtime = 0;
 const hotTickMs = readCfg().hot_reload === true ? 2000 : 5000;
 setInterval(() => {
   const cfg = readCfgCached();
@@ -735,6 +737,17 @@ setInterval(() => {
       killResidentForUpgrade();
     }
     zusageMtime = m;
+    // v202：token_pricing.py 被 zusage.py import（常驻进程驻内存旧代码），同款热重启
+    try {
+      const pm = fs.statSync(path.join(path.dirname(ZUSAGE), "token_pricing.py")).mtimeMs;
+      if (overlayMtimeKnown && pricingMtime !== 0 && pm !== pricingMtime && pyRes) {
+        LOG("token_pricing.py changed, restarting resident python");
+        killResidentForUpgrade();
+      }
+      pricingMtime = pm;
+    } catch (e2) {
+      pricingMtime = 0;   // 文件未部署（旧运行目录）：随 zusage.py 重启自然加载
+    }
     overlayMtimeKnown = true;
   } catch (e) { }
 }, hotTickMs);
@@ -743,17 +756,22 @@ watchDb();
 maybeSpawn();   // 启动先拉一次
 
 let pluginUpdater = null;
+let enginePatcher = null;   // v179：声明前置——updater createUpdater 同步 notify→pushPluginState 会读它（TDZ）
 let pluginRequestBusy = false;
 let lastGoodPayload = null;   // 额度结算后无需重查库即可向各窗口补推（payload 已含 quota）
 let quotaClient = null;
 function pushPluginState(wc, state) {
   if (!isMainWindowState(wc) || wc.isDestroyed() || !isLocalHostPage(wc)) return;
-  /* rateLine / quotaEnabled / restartNotice 随插件状态一起推送：⚙ 面板开关的真值都来自 config.json */
+  /* rateLine / quotaEnabled / restartNotice / enginePatch 随插件状态一起推送：⚙ 面板开关的真值都来自 config.json */
   const payload = { ...state, rateLine: readCfgCached().answer_rate_line !== false, quotaEnabled: quotaEnabled(),
     resetBadgeEnabled: resetBadgeEnabled(), restartNotice: readCfgCached().restart_notice !== false,
-    quotaSources: quotaClient ? quotaClient.sourcesConfig() : [], feedbackVersion: 1 };
+    quotaSources: quotaClient ? quotaClient.sourcesConfig() : [], enginePatch: enginePatcher ? enginePatcher.status() : null, feedbackVersion: 1,
+    relaunchSupported: true };   // v180 issue #158：能力标记与下方 relaunch 分支同文件（inject-main），缺标记=旧主进程必然没有该动作分支
   wc.executeJavaScript(`window.__zusagePluginUpdate && window.__zusagePluginUpdate(${JSON.stringify(payload)})`, true).catch(() => { });
 }
+/* ack 必须先于更新器初始化：createUpdater 会在创建瞬间快照 marker 状态并作为首帧
+ * 推送——若 ack 后跑，已清除的「待重启」会在重启后的第一分钟被误报（实测 2026-11-01）。 */
+acknowledgeRestart();
 try {
   const { createUpdater } = require("./plugin-updater.cjs");
   pluginUpdater = createUpdater({ runtime: HERE, home: app.getPath("home"),
@@ -765,7 +783,24 @@ try {
   delete loadedHashes["plugin-storage.cjs"];
   LOG("plugin updater unavailable:", e.message);
 }
-acknowledgeRestart();
+
+/* ---------- v179 自动压缩阈值引擎补丁：默认关。开启后启动时按 ENGINE_TARGETS 的
+ * SHA256 白名单给 <resources>/glm/zcode.cjs 打阈值改道补丁（fail-open/fail-closed
+ * 语义详见 engine-patch.cjs 头注）。补丁冷生效（引擎子进程下次 spawn 起用，已运行
+ * 会话保持旧阈值）；阈值数值走 autocompact.json 热生效（引擎每轮决策读该文件）。
+ * 关闭开关=还原引擎字节。加载失败只少该功能，不拖垮主链。 */
+try {
+  const { createEnginePatcher } = require("./engine-patch.cjs");
+  enginePatcher = createEnginePatcher({
+    runtime: HERE,
+    resourcesPath: process.resourcesPath,
+    isEnabled: () => readCfgCached().auto_compact_patch === true,   // vendored 分发定制：缺省关(最小修改原则),显式 true 才给引擎打补丁
+    log: (...a) => LOG("[engine-patch]", ...a),
+  });
+  enginePatcher.syncStartup();
+} catch (e) {
+  LOG("engine patcher unavailable:", e.message);
+}
 
 /* ---------- v96 额度客户端（BigModel/Z.ai 个人编码套餐）：解密宿主 OAuth 凭据 →
  * monitor 端点 → 归一化 → 快照 quota 字段。独立模块，加载失败只少额度不拖垮主链
@@ -846,6 +881,18 @@ try {
 } catch (e) {
   LOG("model puller unavailable:", e.message);
 }
+
+/* ---------- v202 更新日志：⚙ 更新页按需拉取当前 Release 渠道的发布说明。独立 try：
+ * 拉取/缓存失败只少日志卡片，不拖垮更新链。渲染进程只传 version/force，flavor 与
+ * repository 一律取自主进程读到的注册渠道，绝不接收页面提供的地址。缓存落运行目录
+ * plugin-notes-cache.json（身份键 flavor|repo|version，TTL 1h，非发布素材不进分发链）。 */
+let releaseNotes = null;
+try {
+  const { createNotesService, createNotesCache } = require("./plugin-release.cjs");
+  releaseNotes = createNotesService({ cache: createNotesCache({ file: path.join(HERE, "plugin-notes-cache.json") }) });
+} catch (e) {
+  LOG("release notes unavailable:", e.message);
+}
 function modelPullerProviderOk(v) {
   return typeof v === "string" && v.length > 0 && v.length <= 160 && !/[\x00-\x1f\x7f]/.test(v);
 }
@@ -863,6 +910,34 @@ function handleModelPullRequest(req, wc) {
   modelPuller.applyModels(req.providerId, Array.isArray(req.models) ? req.models : [])
     .then(respond)
     .catch((e) => { LOG("model pull apply failed:", e.message); respond({ ok: false, error: "apply failed" }); });
+}
+
+/* 渠道门控：Release 渠道取本渠道 Release；market（源码）渠道取注册仓库的同号 Release，
+ * 响应带 verified:false 由浮层标注「参考/未核实」；local 无仓库身份回 unsupported-channel。 */
+async function handleReleaseNotesRequest(req, wc) {
+  const respond = (result) => deliverPluginRequest(wc, req.requestId, result);
+  try {
+    if (!releaseNotes) { respond({ ok: false, reason: "unsupported" }); return; }
+    let channel = null;
+    try { channel = require("./plugin-release.cjs").readChannel(app.getPath("home")); } catch (e) { channel = null; }
+    // release 渠道取本渠道 Release；market（源码）渠道取注册仓库的**同号 Release** 作参考正文
+    // （响应带 verified:false，浮层据此标注「未核实与本渠道一致」）；local 无仓库身份仍拒绝。
+    if (!channel || channel.kind === "local" || !channel.repository) { respond({ ok: false, reason: "unsupported-channel" }); return; }
+    const flavor = channel.flavor === "gitcode" ? "gitcode" : "github";
+    const repository = channel.repository || "";
+    const verified = channel.kind === "release";
+    if (req.action === "release-notes-list") {
+      const result = await releaseNotes.getList({ flavor, repository, force: req.force === true });
+      respond(result.ok ? { ...result, verified } : result);
+      return;
+    }
+    const version = typeof req.version === "string" ? req.version.slice(0, 32) : "";
+    const result = await releaseNotes.getNotes({ flavor, repository, version, force: req.force === true });
+    respond(result.ok ? { ...result, verified } : result);
+  } catch (e) {
+    LOG("release notes request failed:", e.message);
+    respond({ ok: false, reason: "error", message: String((e && e.message) || e).slice(0, 300) });
+  }
 }
 
 /* 逐问速率行开关（⚙ 面板）：原子写运行时 config.json 的 answer_rate_line（缺省=开启）。
@@ -1006,6 +1081,34 @@ async function setResetBadgeEnabled(enabled, wc, requestId) {
   } catch (e) {
     LOG("reset_badge_enabled toggle failed:", e.message);
     deliverPluginRequest(wc, requestId, { ok: false, error: e.message });
+  }
+}
+/* v179 自动压缩阈值开关（⚙ 面板）：写 config.json 的 auto_compact_patch（v188 起缺省开，显式 false 关闭），
+ * 并即时打补丁/还原引擎——引擎子进程下次 spawn 起用，无需改 asar。 */
+async function setAutoCompactPatch(enabled, wc, requestId) {
+  try {
+    const { updateConfig } = require("./plugin-updater.cjs");
+    await updateConfig(HERE, { auto_compact_patch: enabled }, readCfgCached().python_path || (process.platform === "win32" ? "python" : "python3"));
+    cfgCache = null;
+    if (enginePatcher) { if (enabled) enginePatcher.ensure(); else enginePatcher.restore(); }
+    broadcastPluginState();
+    deliverPluginRequest(wc, requestId, { ok: true, enginePatch: enginePatcher ? enginePatcher.status() : null });
+  } catch (e) {
+    LOG("auto_compact_patch toggle failed:", e.message);
+    deliverPluginRequest(wc, requestId, { ok: false, error: e.message });
+  }
+}
+/* v179 阈值数值（⚙ 面板）：白名单归一后写运行目录 autocompact.json。引擎 hook
+ * 每轮决策读该文件——写完下一轮即生效，无需重启。 */
+function handleAutoCompactConfig(req, wc) {
+  const respond = (result) => deliverPluginRequest(wc, req.requestId, result);
+  if (!enginePatcher) { respond({ ok: false, error: "engine patcher unavailable; fully restart ZCode to load it" }); return; }
+  try {
+    const config = enginePatcher.writeConfig(String(req.mode || ""), req.value);
+    broadcastPluginState();
+    respond({ ok: true, config });
+  } catch (e) {
+    respond({ ok: false, error: e.message });
   }
 }
 /* 确定性历史行的数据库富文本（v75）：渲染端只从 turn 容器拿到 DOM turn id，
@@ -1348,10 +1451,16 @@ async function pollPluginRequests() {
           setQuotaEnabled(req.enabled, wc, req.requestId);
         } else if (req && req.action === "quota-reset" && typeof req.enabled === "boolean") {
           setResetBadgeEnabled(req.enabled, wc, req.requestId);
+        } else if (req && req.action === "autocompact-patch" && typeof req.enabled === "boolean") {
+          setAutoCompactPatch(req.enabled, wc, req.requestId);
+        } else if (req && req.action === "autocompact-config") {
+          handleAutoCompactConfig(req, wc);
         } else if (req && (req.action === "quota-src" || req.action === "quota-src-key" || req.action === "quota-src-refresh")) {
           handleQuotaSourceRequest(req, wc);
         } else if (req && (req.action === "model-pull-list" || req.action === "model-pull-fetch" || req.action === "model-pull-apply")) {
           handleModelPullRequest(req, wc);
+        } else if (req && (req.action === "release-notes" || req.action === "release-notes-list")) {   // v202 ⚙ 更新日志：按需拉取当前 Release 渠道的发布说明
+          handleReleaseNotesRequest(req, wc);
         } else if (req && req.action === "quota-refresh") {   // ⚙/chip 手动刷新：绕过 TTL 与软冻结
           const started = quotaClient && quotaEnabled() && (typeof req.sourceId === "string" && req.sourceId.length <= 256
             ? quotaClient.refreshSource(req.sourceId) : quotaClient.refresh());
@@ -1370,6 +1479,9 @@ async function pollPluginRequests() {
               try { app.relaunch(); app.quit(); } catch (e) { LOG("relaunch failed:", e.message); }
             }, 300);
           }
+        } else if (req && typeof req.requestId === "string") {   // v180 issue #158：白名单外动作兜底回执——
+          // 浮层热更/主进程冷加载的版本错位窗口里，未知动作不再静默丢弃，浮层据此给出「主进程是旧版本」的明确指引
+          deliverPluginRequest(wc, req.requestId, { ok: false, error: "unknown action: " + String(req.action).slice(0, 60) });
         }
       }
     }

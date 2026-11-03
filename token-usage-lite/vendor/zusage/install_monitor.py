@@ -81,6 +81,50 @@ def zcode_pids():
     return {t.strip() for t in r.stdout.decode().split() if t.strip()}
 
 
+def zcode_pid_starts(pids):
+    """ZCode 各进程的启动时刻（epoch 秒）字典；探测命令不可用或一个都拿不到时返回
+    None。Windows 走 PowerShell Get-Process（wmic 已从新系统移除），其余平台走
+    ps lstart；个别进程拿不到启动时间就跳过，剩下的仍足以找出最早一批。调用方应
+    只在 PID 集合变化时查询：PowerShell 冷启动可达数秒，不能每轮轮询都调（issue #185）。"""
+    if not pids:
+        return {}
+    if os.name == "nt":
+        try:
+            r = subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 "Get-Process ZCode -ErrorAction SilentlyContinue | ForEach-Object { "
+                 "try { '{0}|{1}' -f $_.Id, $_.StartTime.ToFileTime() } catch {} }"],
+                capture_output=True, timeout=20)
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+        starts = {}
+        for line in r.stdout.decode("gbk", "replace").splitlines():
+            pid, sep, filetime = line.strip().partition("|")
+            if not sep:
+                continue
+            try:
+                starts[pid] = int(filetime) / 10000000 - 11644473600
+            except ValueError:
+                continue
+        return starts or None
+    try:
+        r = subprocess.run(["ps", "-o", "pid=,lstart=", "-p", ",".join(sorted(pids))],
+                           capture_output=True,
+                           env=dict(os.environ, LC_ALL="C"))
+    except OSError:
+        return None
+    starts = {}
+    for line in r.stdout.decode("utf-8", "replace").splitlines():
+        pid, sep, lstart = line.strip().partition(" ")
+        if not sep:
+            continue
+        try:
+            starts[pid] = time.mktime(time.strptime(lstart, "%a %b %d %H:%M:%S %Y"))
+        except ValueError:
+            continue
+    return starts or None
+
+
 def wait_any_exit(pids, timeout_s):
     """阻塞到任一 ZCode 进程退出或超时。Windows 用进程句柄事件驱动等待，消灭固定
     轮询间隔可能错过的「退出→立即重启」空档（等错过后监控只会看到新进程，永远收不了尾）；
@@ -211,6 +255,8 @@ def _run():
     pids0 = zcode_pids() or set()   # 启动采集 ≈ 安装时刻的进程集合（install 完成即拉起本窗口）
     t0 = time.time()
     new_since = None
+    starts = None          # 进程启动时刻缓存：集合不变不重查（见 zcode_pid_starts）
+    starts_key = None
     pi = patch_module()
     verified = {}
     deadline = time.monotonic() + 86400
@@ -274,18 +320,37 @@ def _run():
                                "This window cannot finalize; re-run the install as administrator, then quit ZCode completely and reopen it.")]
                     done = True
                 else:
+                    tool = RUNTIME_DIR / "patch_install.py"
                     lines = [L("[!] ZCode 已退出但替换失败（文件仍被占用？）",
                                "[!] ZCode has exited but the replacement failed (file still locked?)"),
                              L("稍后自动重试；也可手动执行：", "Will retry automatically; you can also run manually:"),
-                             "  python patch_install.py "
+                             "  python \"" + str(tool) + "\" "
                              + (f'remove --asar "{ASAR}"' if pending["operation"] == "remove"
                                 else f'install --finalize --asar "{ASAR}" --runtime "{RUNTIME_DIR}"')]
             else:
-                lines = [L("[等待] 有待替换文件，请完全退出 ZCode。",
-                           "[waiting] A pending replacement file exists; please exit ZCode completely."),
+                # issue #185：关窗常被当成退出（Windows 驻留托盘/后台），pending
+                # 永远等不到空档。画面点名「关窗不等于退出」，并显示最早进程启动
+                # 时刻与补丁排定时刻的先后——「没退干净」一眼可见。
+                if pids != starts_key:
+                    starts_key = pids
+                    starts = zcode_pid_starts(pids)
+                sched = time.strftime("%H:%M:%S", time.localtime(epoch))
+                lines = [L("[等待] 有待替换文件，请完全退出 ZCode（关闭窗口不等于退出）。",
+                           "[waiting] A pending replacement file exists; please quit ZCode completely (closing the window is not quitting)."),
                          L("退出后本窗口将自动完成 asar 替换。",
-                           "This window will finish the asar replacement automatically once you exit."),
+                           "This window will finish the asar replacement automatically once you quit."),
                          "", L("当前 ZCode 进程数：%d" % len(pids), "Current ZCode process count: %d" % len(pids))]
+                if starts:
+                    oldest_epoch = min(starts.values())
+                    oldest = time.strftime("%H:%M:%S", time.localtime(oldest_epoch))
+                    if oldest_epoch < epoch:
+                        lines.append(L("最早进程 %s 启动，早于补丁排定 %s：这些进程不全部退出，替换不会触发。" % (oldest, sched),
+                                       "The oldest process started at %s, before the patch was scheduled (%s); the replacement waits for all of them to exit." % (oldest, sched)))
+                    else:
+                        lines.append(L("最早进程 %s 启动（补丁排定 %s）。" % (oldest, sched),
+                                       "The oldest process started at %s (patch scheduled at %s)." % (oldest, sched)))
+                lines.append(L("若已关闭所有窗口仍未替换，说明 ZCode 仍驻留托盘/后台：请从托盘图标退出，或在任务管理器中确认没有 ZCode 进程残留。",
+                               "If all windows are closed but the replacement is still pending, ZCode is still resident in the tray/background: quit it from the tray icon, or use Task Manager to confirm no ZCode processes remain."))
         elif not pids:
             lines = [L("ZCode 未运行。启动 ZCode 后悬浮条即生效。",
                        "ZCode is not running. The floating bar activates once you start ZCode.")]
@@ -307,25 +372,29 @@ def _run():
                          "", L("本窗口即将自动关闭。", "This window will close automatically.")]
                 done = True
             elif now - new_since > CONFIRM_WAIT:
+                tool = RUNTIME_DIR / "patch_install.py"
                 lines = [L("[?] ZCode 已重启，但 %d 秒内未检测到注入加载。" % CONFIRM_WAIT,
                            "[?] ZCode restarted, but no injection load detected within %ds." % CONFIRM_WAIT),
                          L("若 ZCode 刚升级过，asar 会被官方版本覆盖，",
                            "If ZCode was just upgraded, app.asar was overwritten by the official build —"),
-                         L(f'请重新运行：python patch_install.py install --asar "{ASAR}"',
-                           f'please re-run: python patch_install.py install --asar "{ASAR}"'),
+                         L(f'请重新运行：python "{tool}" install --asar "{ASAR}"',
+                           f'please re-run: python "{tool}" install --asar "{ASAR}"'),
                          L("（继续检测中，diag 一更新即确认）", "(still watching; will confirm as soon as diag updates)")]
             else:
                 lines = [L("ZCode 已重启（新实例），正在确认注入加载……",
                            "ZCode restarted (new instance); confirming injection load…")]
         el = int(now - t0)
-        # issue #130 页脚只在「提权且收尾仍未落定」时警示：done 终屏（成功/finalize_denied）
-        # 与 finished/finalize_denied 当轮终屏上，收尾已不可被关窗打断——照搬会让成功屏
-        # 同时出现「请保持本窗口开启」的自相矛盾文案（review 2026-10-31）。
+        # 收尾未落定（done 终屏与 finished/finalize_denied 当轮终屏除外）时不能说
+        # 「可随时关闭」：关窗即杀死收尾者。提权监控是受保护目录上唯一能收尾的进程
+        # （hook 重建不了它，issue #130），重建门槛是管理员重跑；非提权场景插件链
+        # 下次会话可自动重建、独立链需重跑安装或手动收尾（issue #163），门槛低但
+        # pending 仍会搁浅到那时——同样要警示。
         if pending is not None and pi.is_elevated() and not done and not finished and not finalize_denied:
-            # 提权监控是受保护目录上唯一能收尾的进程（hook 重建不了它，issue #130）：
-            # 关窗即杀死收尾者，文案不能再说「可随时关闭」。
             footer = L("收尾未完成前请保持本窗口开启：关闭窗口将停止自动替换，且需以管理员身份重跑安装才能重建。",
                        "Keep this window open until finalization completes; closing it stops the automatic replacement, and re-running the install as administrator is the only way to rebuild it.")
+        elif pending is not None and not done and not finished and not finalize_denied:
+            footer = L("收尾未完成前请保持本窗口开启：关闭窗口将停止自动替换，重新运行安装即可重建监控。",
+                       "Keep this window open until finalization completes; closing it stops the automatic replacement. Re-run the install to bring the monitor back.")
         else:
             footer = L("本窗口可随时关闭，不影响安装结果。", "You can close this window at any time; the installation result is unaffected.")
         lines += ["", "-" * 52,

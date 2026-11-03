@@ -20,7 +20,7 @@ PREFIX = "🔴 zcode-token-usage-statusbar 插件提醒："
 RESTART_ACTION = ("请完全退出 ZCode（所有窗口）：从 ZCode 菜单选择「退出」，然后重新打开 ZCode，"
                   "让窗口底部的用量状态条加载新版本。只关窗口、刷新页面或重开会话无效。")
 MESSAGE = PREFIX + "用量状态条已安装或更新。" + RESTART_ACTION
-INSTALL_MESSAGE = (PREFIX + "窗口底部的用量状态条还没有安装好。插件默认自动安装，但当前尚未完成。"
+INSTALL_MESSAGE = (PREFIX + "窗口底部的用量状态条还没有安装好。插件会自动安装，但当前尚未完成。"
                    "需要请运行 /install-overlay（会修改客户端文件），"
                    "安装成功后再退出并重开 ZCode；仅重启不能完成安装。"
                    "不需要请运行 /uninstall-overlay，之后不再提示。")
@@ -75,7 +75,7 @@ def reminder(runtime=None, injected=None, restart_files=()):
         hashes = data.get("hashes", {})
         if not isinstance(hashes, dict) or any(
                 name not in ("inject-main.cjs", "plugin-updater.cjs", "plugin-release.cjs",
-                             "plugin-storage.cjs", "quota-client.cjs", "model-puller.cjs", "overlay.js", "zusage.py")
+                             "plugin-storage.cjs", "quota-client.cjs", "model-puller.cjs", "engine-patch.cjs", "overlay.js", "zusage.py")
                 or not isinstance(digest, str) or len(digest) != 64
                 or any(char not in "0123456789abcdef" for char in digest)
                 for name, digest in hashes.items()):
