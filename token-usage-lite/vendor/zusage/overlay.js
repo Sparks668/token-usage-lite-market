@@ -1617,7 +1617,7 @@
         (o.timeStart ? esc(o.timeStart) : "—") + " — " + (o.timeEnd ? esc(o.timeEnd) : "—") + '</span></div>'
       : '';
     return '<div class="zu-stat-tip zu-stat-tip--speed">' +
-      '<style>.zusage-tip-root:has(.zu-stat-tip--speed){max-width:min(420px,calc(100vw - 24px))!important}</style>' +
+      '<style>.zusage-tip-root:has(.zu-stat-tip--speed){max-width:min(470px,calc(100vw - 24px))!important}</style>' +
       '<div class="zu-stat-head"><div class="zu-stat-title">' + esc(L("生成速度", "Generation speed")) + '</div>' +
       (o.scope ? '<div class="zu-stat-scope">' + esc(o.scope) + '</div>' : "") + '</div>' +
       '<div class="zu-speed-hero">' + hero + '</div>' +
