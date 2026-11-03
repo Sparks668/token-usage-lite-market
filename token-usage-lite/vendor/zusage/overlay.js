@@ -3031,7 +3031,7 @@
       ".zu-stat-table td.dim0{color:var(--color-tooltip-tag-foreground,#a6a6a6);opacity:.7}" +
       ".zu-stat-more{display:block;margin:10px auto 0;background:none;border:0;color:var(--color-brand,#a3cfff);font:inherit;font-size:var(--ui-font-size,14px);cursor:pointer;padding:4px 12px;border-radius:8px}" +
       ".zu-stat-more:hover{text-decoration:underline}" +
-      ".zu-stat-tip--speed .zu-stat-v{font-size:calc(var(--ui-font-size,14px) + 1px)}" + ".zu-stat-tip--speed .zu-stat-v small{font-size:calc(var(--ui-font-size,14px) - 1px)}" + ".zu-stat-tip--speed .zu-speed-hero{padding:5px 7px}" + ".zu-speed-hero{display:grid;grid-template-columns:1fr 1fr;gap:0 9px;background:rgba(255,255,255,.045);border-radius:8px;padding:8px 9px}" +
+      ".zu-stat-tip--speed .zu-speed-main{font-size:calc(var(--ui-font-size,14px) + 2px)}" + ".zu-stat-tip--speed .zu-speed-main small{font-size:calc(var(--ui-font-size,14px))}" + ".zu-stat-tip--speed .zu-speed-sub{font-size:calc(var(--ui-font-size,14px) + 1px)}" + ".zu-stat-tip--speed .zu-speed-hero{padding:5px 7px}" + ".zu-speed-hero{display:grid;grid-template-columns:1fr 1fr;gap:0 9px;background:rgba(255,255,255,.045);border-radius:8px;padding:8px 9px}" +
       ".zu-light .zu-speed-hero{background:rgba(0,0,0,.045)}" +
       ".zu-speed-hero .zu-stat-kpi + .zu-stat-kpi{border-left:1px solid var(--color-popover-border,rgba(255,255,255,.12));padding-left:9px}" +
       ".zu-light .zu-speed-hero .zu-stat-kpi + .zu-stat-kpi{border-left-color:rgba(0,0,0,.12)}" +
