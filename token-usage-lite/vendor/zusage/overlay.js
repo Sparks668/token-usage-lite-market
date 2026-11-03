@@ -1594,8 +1594,8 @@
   function speedCardHTML(o) {
     function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
     var hero = '<div class="zu-stat-kpi"><div class="zu-stat-k">' + esc(L("当前读数", "Current reading")) + '</div>' +
-      '<div class="zu-speed-main' + (o.mainCls ? " " + o.mainCls : "") + '">' + o.main + (o.noUnit ? "" : ' <small>t/s</small>') + '</div>' +
-      (o.bandTag ? '<div class="zu-speed-bandtag"><b class="' + (o.mainCls || "") + '" style="font-weight:600">' + esc(o.bandTag) + '</b></div>' : '') +
+      '<div class="zu-speed-main' + (o.mainCls ? " " + o.mainCls : "") + '">' + o.main + (o.noUnit ? "" : ' <small>t/s</small>') +
+        (o.bandTag ? ' <span class="zu-speed-bandtag"><b class="' + (o.mainCls || "") + '">' + esc(o.bandTag) + '</b></span>' : '') + '</div>' +
       '</div>';
     if (o.subLabel) {
       hero += '<div class="zu-stat-kpi"><div class="zu-stat-k">' + esc(o.subLabel) + '</div>' +
@@ -3031,7 +3031,7 @@
       ".zu-stat-table td.dim0{color:var(--color-tooltip-tag-foreground,#a6a6a6);opacity:.7}" +
       ".zu-stat-more{display:block;margin:10px auto 0;background:none;border:0;color:var(--color-brand,#a3cfff);font:inherit;font-size:var(--ui-font-size,14px);cursor:pointer;padding:4px 12px;border-radius:8px}" +
       ".zu-stat-more:hover{text-decoration:underline}" +
-      ".zu-stat-tip--speed .zu-speed-main{font-size:calc(var(--ui-font-size,14px) + 2px)}" + ".zu-stat-tip--speed .zu-speed-main small{font-size:calc(var(--ui-font-size,14px))}" + ".zu-stat-tip--speed .zu-speed-sub{font-size:calc(var(--ui-font-size,14px) + 1px)}" + ".zu-stat-tip--speed .zu-speed-hero{padding:5px 7px}" + ".zu-stat-tip--speed{font-size:calc(var(--ui-font-size,14px) - 1px)}" + ".zu-stat-tip--speed .zu-stat-head{margin-bottom:4px}" + ".zu-stat-tip--speed .zu-legend-grid{gap:3px 6px}" + ".zu-stat-tip--speed .zu-legend-item{gap:4px;padding:1px 4px}" + ".zu-stat-tip--speed .zu-legend-head{margin-top:8px!important}" + ".zu-stat-tip--speed .zu-stat-note{margin-top:3px}" + ".zu-stat-tip--speed .zu-speed-bandtag{margin-top:4px;padding:1px 8px}" + ".zu-speed-hero{display:grid;grid-template-columns:1fr 1fr;gap:0 9px;background:rgba(255,255,255,.045);border-radius:8px;padding:8px 9px}" +
+      ".zu-stat-tip--speed .zu-speed-main{font-size:calc(var(--ui-font-size,14px) + 2px)}" + ".zu-stat-tip--speed .zu-speed-main small{font-size:calc(var(--ui-font-size,14px))}" + ".zu-stat-tip--speed .zu-speed-sub{font-size:calc(var(--ui-font-size,14px) + 1px)}" + ".zu-stat-tip--speed .zu-speed-hero{padding:5px 7px}" + ".zu-stat-tip--speed{font-size:calc(var(--ui-font-size,14px) - 1px)}" + ".zu-stat-tip--speed .zu-stat-head{margin-bottom:4px}" + ".zu-stat-tip--speed .zu-legend-grid{gap:3px 6px}" + ".zu-stat-tip--speed .zu-legend-item{gap:4px;padding:1px 4px}" + ".zu-stat-tip--speed .zu-legend-head{margin-top:8px!important}" + ".zu-stat-tip--speed .zu-stat-note{margin-top:3px}" + ".zu-stat-tip--speed .zu-speed-bandtag{display:inline;margin:0 0 0 6px;padding:0;border:0;font-size:calc(var(--ui-font-size,14px) - 3px);vertical-align:baseline}" + ".zu-stat-tip--speed .zu-speed-bandtag b{font-weight:500}" + ".zu-speed-hero{display:grid;grid-template-columns:1fr 1fr;gap:0 9px;background:rgba(255,255,255,.045);border-radius:8px;padding:8px 9px}" +
       ".zu-light .zu-speed-hero{background:rgba(0,0,0,.045)}" +
       ".zu-speed-hero .zu-stat-kpi + .zu-stat-kpi{border-left:1px solid var(--color-popover-border,rgba(255,255,255,.12));padding-left:9px}" +
       ".zu-light .zu-speed-hero .zu-stat-kpi + .zu-stat-kpi{border-left-color:rgba(0,0,0,.12)}" +
