@@ -1633,7 +1633,7 @@
       var b = TPS_BANDS[i];
       var isCur = curCls && b.cls === curCls;
       out += '<span class="zu-legend-item' + (isCur ? " cur" : "") + '"><span class="' + b.cls + ' zu-legend-dot dot-c"></span><b class="' + b.cls + '">' +
-        (b.lo === 0 ? "&lt;40" : b.hi ? b.lo + "–" + b.hi : "≥2000 Ultra") + "</b></span>";
+        (b.lo === 0 ? "&lt;40" : b.hi ? b.lo + "–" + b.hi : "≥2000") + "</b></span>";
     }
     return out + "</div>";
   }
