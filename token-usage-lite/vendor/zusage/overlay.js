@@ -1617,7 +1617,7 @@
         (o.timeStart ? esc(o.timeStart) : "—") + " — " + (o.timeEnd ? esc(o.timeEnd) : "—") + '</span></div>'
       : '';
     return '<div class="zu-stat-tip zu-stat-tip--speed">' +
-      '<style>.zusage-tip-root:has(.zu-stat-tip--speed){max-width:min(760px,calc(100vw - 24px))!important}</style>' +
+      '<style>.zusage-tip-root:has(.zu-stat-tip--speed){max-width:min(420px,calc(100vw - 24px))!important}</style>' +
       '<div class="zu-stat-head"><div class="zu-stat-title">' + esc(L("生成速度", "Generation speed")) + '</div>' +
       (o.scope ? '<div class="zu-stat-scope">' + esc(o.scope) + '</div>' : "") + '</div>' +
       '<div class="zu-speed-hero">' + hero + '</div>' +
@@ -3031,7 +3031,7 @@
       ".zu-stat-table td.dim0{color:var(--color-tooltip-tag-foreground,#a6a6a6);opacity:.7}" +
       ".zu-stat-more{display:block;margin:10px auto 0;background:none;border:0;color:var(--color-brand,#a3cfff);font:inherit;font-size:var(--ui-font-size,14px);cursor:pointer;padding:4px 12px;border-radius:8px}" +
       ".zu-stat-more:hover{text-decoration:underline}" +
-      ".zu-stat-tip--speed .zu-speed-main{font-size:calc(var(--ui-font-size,14px) + 2px)}" + ".zu-stat-tip--speed .zu-speed-main small{font-size:calc(var(--ui-font-size,14px))}" + ".zu-stat-tip--speed .zu-speed-sub{font-size:calc(var(--ui-font-size,14px) + 1px)}" + ".zu-stat-tip--speed .zu-speed-hero{padding:5px 7px}" + ".zu-speed-hero{display:grid;grid-template-columns:1fr 1fr;gap:0 9px;background:rgba(255,255,255,.045);border-radius:8px;padding:8px 9px}" +
+      ".zu-stat-tip--speed .zu-speed-main{font-size:calc(var(--ui-font-size,14px) + 2px)}" + ".zu-stat-tip--speed .zu-speed-main small{font-size:calc(var(--ui-font-size,14px))}" + ".zu-stat-tip--speed .zu-speed-sub{font-size:calc(var(--ui-font-size,14px) + 1px)}" + ".zu-stat-tip--speed .zu-speed-hero{padding:5px 7px}" + ".zu-stat-tip--speed{font-size:calc(var(--ui-font-size,14px) - 1px)}" + ".zu-stat-tip--speed .zu-stat-head{margin-bottom:4px}" + ".zu-stat-tip--speed .zu-legend-grid{gap:3px 6px}" + ".zu-stat-tip--speed .zu-legend-item{gap:4px;padding:1px 4px}" + ".zu-stat-tip--speed .zu-legend-head{margin-top:8px!important}" + ".zu-stat-tip--speed .zu-stat-note{margin-top:3px}" + ".zu-stat-tip--speed .zu-speed-bandtag{margin-top:4px;padding:1px 8px}" + ".zu-speed-hero{display:grid;grid-template-columns:1fr 1fr;gap:0 9px;background:rgba(255,255,255,.045);border-radius:8px;padding:8px 9px}" +
       ".zu-light .zu-speed-hero{background:rgba(0,0,0,.045)}" +
       ".zu-speed-hero .zu-stat-kpi + .zu-stat-kpi{border-left:1px solid var(--color-popover-border,rgba(255,255,255,.12));padding-left:9px}" +
       ".zu-light .zu-speed-hero .zu-stat-kpi + .zu-stat-kpi{border-left-color:rgba(0,0,0,.12)}" +
