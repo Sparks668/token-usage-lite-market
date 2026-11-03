@@ -1,7 +1,7 @@
 # NOTICE — 第三方代码声明
 
 本插件包含来自 [zcode-token-usage-statusbar](https://github.com/ByteRax/zcode-token-usage-statusbar)
-(v1.5.7,作者 xhwxt/ByteRax)的代码,按 **MIT 许可证** vendored 引入,
+(v1.5.10,作者 xhwxt/ByteRax)的代码,按 **MIT 许可证** vendored 引入,
 许可证全文见 [vendor/zusage/LICENSE](vendor/zusage/LICENSE),版权归原作者所有。
 
 ## 引入范围
@@ -47,3 +47,9 @@ hooks/session-start.py 与 hooks/prompt-submit.py。
 
 上游持续活跃(版本指纹随 ZCode 官方更新而更新)。ZCode 大版本升级后若状态条失联,
 优先考虑同步上游新版本并重放上述 3 处默认值补丁。
+
+8. **引擎补丁缺省关(v0.3.5)**:上游 v1.5.10 新增 `engine-patch.cjs`(给 glm/zcode.cjs
+   打自动压缩阈值补丁,上游缺省开)。本分发版按最小修改原则改为**缺省关**
+   (`auto_compact_patch === true` 才启用),配置守卫同步补该键。
+9. **上游基线**:v1.5.10(2026-11-03 同步,支持 ZCode 3.17.2 指纹;上游缺省开/关的
+   三个联网项与改名验收补丁、显示精简补丁如上,每次上游同步后重放)。
