@@ -586,7 +586,7 @@ def configure(cfg=None, config_dir=None):
     with _STATE_LOCK:
         _CFG["url"] = p.get("url") or PRICING_URL
         _CFG["fx_url"] = fx.get("url") or FX_URL
-        _CFG["fetch"] = p.get("fetch") is not False
+        _CFG["fetch"] = p.get("fetch") is True   # vendored 分发定制:缺省关(零联网),显式 true 才拉价表/汇率
         _CACHE_PATH = base / "pricing-cache.json"
 
 

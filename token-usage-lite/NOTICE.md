@@ -56,3 +56,7 @@ hooks/session-start.py 与 hooks/prompt-submit.py。
 10. **速度卡数字缩小(v0.3.7)**:上游 v1.5.10 的速率悬停详情卡主数字过大
     (zu-stat-v 基准 +15px);增加仅作用于 `.zu-stat-tip--speed` 的字号覆盖
     (主数字 +6px、单位 +0px),卡片内容(图例/口径/注脚)保持上游原样。
+11. **价表拉取缺省关(v0.3.14)**:上游 v1.5.10 新增 `token_pricing.py`(预估费用:
+    models.dev 价表 + 两个汇率 API,`pricing.fetch` **缺省开**)。本分发版改缺省关
+    (`pricing.fetch === true` 才拉取),配置守卫同步补嵌套键 `pricing.fetch=false`。
+    此为第 4 个被缺省关闭的联网面(额度/自动更新/引擎补丁/价表)。

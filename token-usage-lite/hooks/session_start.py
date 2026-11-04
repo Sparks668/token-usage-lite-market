@@ -21,6 +21,7 @@ HARDENED = {
     "restart_notice": True,
     "context_window": 200000,
     "remote": {"auto": False, "enabled": False},
+    "pricing": {"fetch": False},
 }
 FILL_KEYS = ("plugin_auto_update", "quota_enabled", "reset_badge_enabled", "auto_compact_patch")
 
@@ -45,6 +46,13 @@ def ensure_config():
             if k not in cfg:          # 只补缺失键,绝不覆盖用户显式设置
                 cfg[k] = HARDENED[k]
                 changed = True
+        pk = cfg.get("pricing")     # 嵌套键:pricing.fetch(v0.3.14 起缺省关)
+        if not isinstance(pk, dict):
+            cfg["pricing"] = dict(HARDENED["pricing"])
+            changed = True
+        elif "fetch" not in pk:
+            pk["fetch"] = False
+            changed = True
         if changed:
             f.write_text(json.dumps(cfg, ensure_ascii=False, indent=2),
                          encoding="utf-8")
