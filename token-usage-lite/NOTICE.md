@@ -60,3 +60,7 @@ hooks/session-start.py 与 hooks/prompt-submit.py。
     models.dev 价表 + 两个汇率 API,`pricing.fetch` **缺省开**)。本分发版改缺省关
     (`pricing.fetch === true` 才拉取),配置守卫同步补嵌套键 `pricing.fetch=false`。
     此为第 4 个被缺省关闭的联网面(额度/自动更新/引擎补丁/价表)。
+12. **Windows 适配(v0.3.15)**:MCP 服务命令从写死的 `python3` 改为 Node 启动器
+    (`scripts/mcp_launcher.mjs`,官方 jupyter-notebook 同款模式)——启动器内解析
+    `python3→python→py -3`(或插件设置 pythonPath 覆盖)再拉起 usage_mcp.py,
+    解决 Windows 无 python3 命令导致 MCP 起不来的问题。hook 的回退链不变。

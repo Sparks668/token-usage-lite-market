@@ -39,6 +39,13 @@ ZCode 插件市场:token 用量速览(MCP 查询 + 侧栏 HUD 面板 + 底部悬
 - 悬浮条:会话内 `/uninstall-overlay`(完全退出重开后消失,app.asar 恢复)。
 - 整个插件:插件市场 → 卸载。
 
+## Windows 说明
+
+- MCP 与 hooks 自动解析 `python3 / python / py -3`;非标准安装可在插件设置里填 Python 完整路径。
+- ZCode 装在 **Program Files** 时,悬浮条安装(改 app.asar)需要**以管理员身份运行一次 ZCode**;
+  用户目录安装(默认)无需管理员。
+- 悬浮条安装失败时,在会话里运行 `/install-overlay` 按提示操作;`/uninstall-overlay` 可卸载。
+
 ## 兼容性
 
 - macOS / Windows;Python 3.8+(标准库,零依赖)。
